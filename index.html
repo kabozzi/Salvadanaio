@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#cfe3dc" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="Salvadanaio" />
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>Il salvadanaio</title>
+<style>
+  :root {
+    --sfondo: #cfe3dc;
+    --carta: #fdf9f0;
+    --inchiostro: #23332f;
+    --mela: #5b9a31;
+    --zucca: #efa022;
+    --zucca-chiaro: #f8c96f;
+    --lampone: #c33f66;
+    --grigio: #a9bcb5;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: ui-rounded, "SF Pro Rounded", "Segoe UI Variable Display", Nunito,
+      "Trebuchet MS", system-ui, sans-serif;
+    color: var(--inchiostro);
+    background: var(--sfondo);
+    padding: max(22px, env(safe-area-inset-top)) 16px 40px;
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+  input, select {
+    font: inherit; color: inherit; background: #fff; padding: 9px 12px;
+    border: 2.5px solid var(--inchiostro); border-radius: 12px; max-width: 100%;
+  }
+  :focus-visible { outline: 3px solid var(--inchiostro); outline-offset: 2px; }
+  #app > * { max-width: 680px; margin-left: auto; margin-right: auto; }
+  .pg-boot { text-align: center; padding: 70px 0; opacity: .6; }
+
+  .pg-testa { text-align: center; margin-bottom: 18px; }
+  .pg-testa h1 { font-size: 1.35rem; font-weight: 800; margin: 0; letter-spacing: -0.01em; }
+  .pg-testa p { margin: 3px 0 0; font-size: .9rem; opacity: .65; }
+  .pg-stato-rete {
+    display: inline-block; margin-left: 6px; width: 8px; height: 8px; border-radius: 50%;
+    background: var(--mela); vertical-align: middle;
+  }
+  .pg-stato-rete.giu { background: var(--lampone); }
+  .pg-stato-rete.locale { background: var(--grigio); }
+
+  .pg-hero {
+    display: flex; align-items: center; gap: 20px;
+    background: var(--carta); border: 3px solid var(--inchiostro);
+    border-radius: 26px 20px 28px 22px; padding: 18px 22px;
+  }
+  .pg-barattolo { width: 96px; height: 112px; flex: none; }
+  .pg-hero-testo { min-width: 0; flex: 1; }
+  .pg-euro {
+    margin: 0; font-size: clamp(2.4rem, 11vw, 3.4rem); font-weight: 800;
+    line-height: .95; letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+  }
+  .pg-hero-riga { margin: 6px 0 10px; font-size: .9rem; opacity: .7; }
+  .pg-hero-nota { margin: 8px 0 0; font-size: .82rem; opacity: .6; line-height: 1.4; }
+  .pg-barra {
+    position: relative; height: 14px; border: 2.5px solid var(--inchiostro);
+    border-radius: 10px; background: #fff;
+  }
+  .pg-barra span {
+    display: block; height: 100%; background: var(--mela);
+    border-radius: 7px 4px 4px 7px; transition: width .35s ease;
+  }
+  .pg-barra i {
+    position: absolute; top: -6px; bottom: -6px; width: 3px;
+    background: var(--inchiostro); opacity: .35;
+  }
+  .pg-avviso {
+    background: var(--lampone); color: #fff; padding: 8px 14px;
+    border-radius: 12px; font-size: .85rem; margin: 12px auto 0;
+  }
+
+  .pg-tab { display: flex; gap: 8px; margin: 20px auto 12px; }
+  .pg-tab button {
+    flex: 1; padding: 13px 6px; background: transparent; font-weight: 700; font-size: .95rem;
+    border: 2.5px solid transparent; border-radius: 14px;
+  }
+  .pg-tab button.attivo { background: var(--carta); border-color: var(--inchiostro); }
+
+  .pg-pannello {
+    background: var(--carta); border: 3px solid var(--inchiostro);
+    border-radius: 22px 26px 20px 24px; padding: 16px 18px 20px;
+  }
+  .pg-datebar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .pg-datebar > div { flex: 1; text-align: center; font-size: 1.05rem; }
+  .pg-datebar button {
+    width: 44px; height: 44px; flex: none; font-size: 1.4rem; line-height: 1;
+    background: transparent; border: 2.5px solid var(--inchiostro); border-radius: 50%;
+  }
+  .pg-oggi-tag {
+    display: inline-block; margin-left: 8px; padding: 2px 8px; font-size: .7rem;
+    font-weight: 700; background: var(--zucca-chiaro); border-radius: 8px;
+  }
+  .pg-libero, .pg-vuoto {
+    margin: 0 0 12px; font-size: .88rem; opacity: .6; text-align: center;
+    border: 2px dashed var(--grigio); border-radius: 12px; padding: 10px; list-style: none;
+  }
+
+  .pg-lista { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: 8px; }
+  .pg-voce {
+    width: 100%; display: flex; align-items: center; gap: 12px; text-align: left;
+    padding: 14px; background: #fff; border: 2.5px solid var(--inchiostro);
+    border-radius: 14px;
+  }
+  .pg-box {
+    width: 30px; height: 30px; flex: none; border: 2.5px solid var(--inchiostro);
+    border-radius: 8px; display: grid; place-items: center;
+    font-size: 1.1rem; font-weight: 800; color: transparent;
+  }
+  .pg-voce.fatta { background: #edf6e6; }
+  .pg-voce.fatta .pg-box { background: var(--mela); color: #fff; }
+  .pg-voce.fatta .pg-voce-testo { text-decoration: line-through; opacity: .55; }
+  .pg-voce-testo { flex: 1; font-size: 1rem; }
+  .pg-premio { font-weight: 800; color: var(--mela); font-size: 1.05rem; }
+
+  .pg-capricci h2, .pg-editor h2, .pg-storico h2 {
+    font-size: .95rem; font-weight: 800; margin: 0 0 10px;
+  }
+  .pg-cap-riga {
+    display: flex; align-items: center; gap: 10px; padding: 9px 0;
+    border-top: 2px dotted var(--grigio);
+  }
+  .pg-cap-testo { flex: 1; font-size: .92rem; }
+  .pg-costo { font-weight: 800; color: var(--lampone); font-size: .92rem; }
+  .pg-contatore { display: flex; align-items: center; gap: 4px; }
+  .pg-contatore button {
+    width: 36px; height: 36px; border: 2.5px solid var(--inchiostro);
+    background: #fff; border-radius: 10px; font-weight: 800; line-height: 1;
+  }
+  .pg-contatore button:disabled { opacity: .25; cursor: default; }
+  .pg-contatore b { min-width: 22px; text-align: center; opacity: .3; }
+  .pg-contatore b.acceso { opacity: 1; color: var(--lampone); }
+  .pg-bilancio {
+    margin: 16px 0 0; padding-top: 12px; border-top: 2.5px solid var(--inchiostro);
+    font-size: .9rem;
+  }
+
+  .pg-strip { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; }
+  .pg-cella {
+    position: relative; padding: 9px 0 8px; display: grid; place-items: center; gap: 1px;
+    border: 2.5px solid var(--inchiostro); border-radius: 12px; background: #fff;
+  }
+  .pg-cella small { font-size: .62rem; font-weight: 700; opacity: .55; }
+  .pg-cella b { font-size: 1rem; font-weight: 800; line-height: 1.1; }
+  .pg-cella em { font-size: .62rem; font-style: normal; opacity: .6; }
+  .pg-cella.piena { background: var(--mela); color: #fff; }
+  .pg-cella.piena small, .pg-cella.piena em { opacity: .85; }
+  .pg-cella.parziale { background: var(--zucca-chiaro); }
+  .pg-cella.futuro, .pg-cella.libero { border-color: var(--grigio); color: var(--grigio); }
+  .pg-cella.libero { background: transparent; border-style: dashed; }
+  .pg-cella.adesso { box-shadow: 0 0 0 3px var(--zucca); }
+  .pg-cella.scelta { transform: scale(1.05); }
+  .pg-punto {
+    position: absolute; top: 3px; right: 3px; width: 7px; height: 7px;
+    border-radius: 50%; background: var(--lampone);
+  }
+
+  .pg-riepilogo { margin: 18px 0 16px; display: grid; gap: 2px; }
+  .pg-riepilogo div {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 8px 0; border-top: 2px dotted var(--grigio); font-size: .92rem;
+  }
+  .pg-riepilogo dt { opacity: .7; }
+  .pg-riepilogo dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .pg-riepilogo .pg-forte { color: var(--mela); font-size: 1.05rem; }
+
+  .pg-paga {
+    width: 100%; padding: 14px; font-weight: 800; font-size: .95rem; background: #fff;
+    border: 2.5px solid var(--inchiostro); border-radius: 14px;
+  }
+  .pg-paga.fatto { background: var(--mela); color: #fff; }
+
+  .pg-storico { margin-top: 24px; }
+  .pg-storico-riga {
+    width: 100%; display: flex; align-items: center; gap: 10px; text-align: left;
+    padding: 11px 2px; background: transparent; border: 0;
+    border-top: 2px dotted var(--grigio); font-size: .88rem;
+  }
+  .pg-storico-riga span { flex: 1; }
+  .pg-storico-riga em { font-style: normal; opacity: .55; font-variant-numeric: tabular-nums; }
+  .pg-storico-riga b { min-width: 58px; text-align: right; font-variant-numeric: tabular-nums; }
+  .pg-storico-riga i { width: 18px; text-align: center; font-style: normal; opacity: .35; }
+  .pg-storico-riga i.ok { color: var(--mela); opacity: 1; font-weight: 800; }
+
+  .pg-gate { text-align: center; padding: 20px 0; }
+  .pg-gate h2 { margin: 0 0 14px; font-size: 1rem; }
+  .pg-gate label { display: grid; gap: 8px; justify-items: center; font-size: .95rem; }
+  .pg-gate input { width: 130px; text-align: center; font-size: 1.2rem; font-weight: 700; }
+  .pg-gate p { font-size: .85rem; opacity: .65; line-height: 1.5; margin: 14px auto 0; max-width: 42ch; }
+  .pg-gate .pg-paga { max-width: 240px; margin: 14px auto 0; }
+
+  .pg-campi { display: grid; gap: 12px; margin-bottom: 14px; }
+  .pg-campi label { display: grid; gap: 5px; font-size: .85rem; font-weight: 700; }
+  .pg-spiega {
+    margin: 0 0 20px; font-size: .85rem; line-height: 1.5; opacity: .75;
+    background: #fff; border: 2px dotted var(--grigio); border-radius: 12px; padding: 10px 12px;
+  }
+  .pg-editor { margin-bottom: 22px; }
+  .pg-editor-riga { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
+  .pg-editor-riga input[type="text"] { flex: 1; min-width: 0; font-size: .9rem; }
+  .pg-segno { font-weight: 800; opacity: .5; }
+  .pg-num { width: 62px; text-align: center; }
+  .pg-elimina {
+    width: 38px; height: 38px; flex: none; background: transparent;
+    border: 2.5px solid var(--grigio); border-radius: 10px; font-size: 1.1rem; line-height: 1;
+  }
+  .pg-aggiungi {
+    width: 100%; padding: 12px; background: transparent; font-weight: 700; font-size: .88rem;
+    border: 2.5px dashed var(--inchiostro); border-radius: 12px;
+  }
+  .pg-pericolo {
+    border-top: 2.5px solid var(--inchiostro); padding-top: 14px; margin-top: 4px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .pg-pericolo p { margin: 0; flex: 1; min-width: 180px; font-size: .82rem; opacity: .7; }
+  .pg-pericolo input { width: 130px; }
+
+  @media (max-width: 460px) {
+    .pg-hero { flex-direction: column; text-align: center; gap: 12px; }
+    .pg-hero-testo { width: 100%; }
+    .pg-cap-riga { flex-wrap: wrap; }
+    .pg-cap-testo { flex: 1 1 100%; }
+    .pg-cella small { font-size: .55rem; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<div id="app"><p class="pg-boot">Apro il salvadanaio…</p></div>
+<script type="module">
+/* ------------------------------------------------------------------
+   1. CONFIGURAZIONE — l'unica parte da modificare a mano.
+   Lasciando apiKey vuota l'app funziona in locale su questo
+   dispositivo (localStorage), senza sincronizzazione.
+------------------------------------------------------------------ */
+const FIREBASE = {
+  apiKey: "",
+  authDomain: "",
+  projectId: "",
+  appId: "",
+};
+
+const VERSIONE_SDK = "10.12.2";
+const CHIAVE_LOCALE = "paghetta_dati_v1";
+const CHIAVE_PASS = "paghetta_pass_v1";
+
+const CONFIG_INIZIALE = {
+  nome: "",
+  importoSettimanale: 2.5,
+  giorni: "tutti",
+  attivita: [
+    { id: "a1", testo: "Rifare il letto", gettoni: 1 },
+    { id: "a2", testo: "Sparecchiare la tavola", gettoni: 1 },
+    { id: "a3", testo: "Rimettere a posto i giochi", gettoni: 1 },
+    { id: "a4", testo: "Preparare lo zaino", gettoni: 1 },
+  ],
+  capricci: [
+    { id: "c1", testo: "Piange o urla per ottenere qualcosa", gettoni: 2 },
+    { id: "c2", testo: "Risponde male", gettoni: 2 },
+    { id: "c3", testo: "Scenata per i compiti", gettoni: 3 },
+  ],
+};
+
+/* ------------------------------------------------------------------
+   2. UTILITÀ
+------------------------------------------------------------------ */
+const DOW = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+const DOW_MINI = ["Lun", "Mar", "Mer", "Gio", "Ven", "Sab", "Dom"];
+const MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+
+const uid = () => Math.random().toString(36).slice(2, 8);
+const due = (n) => String(n).padStart(2, "0");
+const iso = (d) => `${d.getFullYear()}-${due(d.getMonth() + 1)}-${due(d.getDate())}`;
+const daIso = (s) => { const [a, m, g] = s.split("-").map(Number); return new Date(a, m - 1, g); };
+const piu = (s, n) => { const d = daIso(s); d.setDate(d.getDate() + n); return iso(d); };
+const lunedi = (s) => { const d = daIso(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
+const eur = (n) => (Number.isFinite(n) ? n : 0).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
+const attivoIn = (d, modo) => (modo === "feriali" ? d.getDay() >= 1 && d.getDay() <= 5 : true);
+const gettoniLabel = (n) => `${n} ${n === 1 ? "gettone" : "gettoni"}`;
+const breve = (s) => { const d = daIso(s); return `${d.getDate()} ${MESI[d.getMonth()].slice(0, 3)}`; };
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+async function impronta(testo) {
+  const pulito = testo.trim().toLowerCase().replace(/\s+/g, " ");
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("paghetta:" + pulito));
+    return Array.from(new Uint8Array(buf)).map((b) => due(b.toString(16))).join("").slice(0, 28);
+  } catch (e) {
+    let h = 5381;
+    for (const c of pulito) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0;
+    return "l" + h.toString(16);
+  }
+}
+
+/* ------------------------------------------------------------------
+   3. STATO E PERSISTENZA
+------------------------------------------------------------------ */
+const vista = { tab: "oggi", sel: iso(new Date()), sbloccato: false, avviso: "", rete: "locale" };
+const QUIZ = { a: 6 + Math.floor(Math.random() * 4), b: 6 + Math.floor(Math.random() * 4) };
+let dati = null;
+let ultimoInvio = "";
+let scriviRemoto = null;
+
+const normalizza = (grezzo) => {
+  const c = { ...CONFIG_INIZIALE, ...((grezzo && grezzo.config) || {}) };
+  if (grezzo && grezzo.config && grezzo.config.importoMensile && !grezzo.config.importoSettimanale) {
+    c.importoSettimanale = Math.round((grezzo.config.importoMensile / 4.33) * 100) / 100;
+  }
+  delete c.importoMensile;
+  if (!Array.isArray(c.attivita)) c.attivita = [];
+  if (!Array.isArray(c.capricci)) c.capricci = [];
+  return { config: c, registro: (grezzo && grezzo.registro) || {}, paghe: (grezzo && grezzo.paghe) || {} };
+};
+
+function salva(prossimo) {
+  dati = prossimo;
+  disegna();
+  const testo = JSON.stringify(prossimo);
+  localStorage.setItem(CHIAVE_LOCALE, testo);
+  if (!scriviRemoto) return;
+  ultimoInvio = testo;
+  scriviRemoto(prossimo).then(
+    () => { if (vista.avviso) { vista.avviso = ""; disegna(); } },
+    () => { vista.avviso = "Modifica salvata solo su questo dispositivo: nessuna connessione."; disegna(); }
+  );
+}
+
+const patchConfig = (patch) => salva({ ...dati, config: { ...dati.config, ...patch } });
+
+function patchGiorno(chiave, fn) {
+  const a = dati.registro[chiave] || { fatte: {}, capricci: {} };
+  const nuovo = fn({ fatte: { ...a.fatte }, capricci: { ...a.capricci } });
+  salva({ ...dati, registro: { ...dati.registro, [chiave]: nuovo } });
+}
+
+function collega(remoto) {
+  const testo = JSON.stringify(remoto);
+  if (testo === ultimoInvio) return;
+  const attivo = document.activeElement;
+  if (attivo && (attivo.tagName === "INPUT" || attivo.tagName === "SELECT")) return;
+  dati = normalizza(remoto);
+  disegna();
+}
+
+/* ------------------------------------------------------------------
+   4. CALCOLO DELLA SETTIMANA
+------------------------------------------------------------------ */
+function calcola() {
+  const { config, registro } = dati;
+  const oggi = iso(new Date());
+  const perGiorno = config.attivita.reduce((s, x) => s + Number(x.gettoni || 0), 0);
+
+  const settimana = (inizio) => {
+    let giorniAttivi = 0, fatti = 0, penalita = 0, ancora = 0, perfetti = 0;
+    const giorni = [];
+    for (let i = 0; i < 7; i++) {
+      const chiave = piu(inizio, i);
+      const att = attivoIn(daIso(chiave), config.giorni);
+      const rec = registro[chiave] || {};
+      const fattiG = config.attivita.reduce(
+        (s, x) => s + (rec.fatte && rec.fatte[x.id] ? Number(x.gettoni || 0) : 0), 0);
+      const capG = config.capricci.reduce(
+        (s, x) => s + ((rec.capricci && rec.capricci[x.id]) || 0) * Number(x.gettoni || 0), 0);
+      if (att) {
+        giorniAttivi++;
+        fatti += fattiG;
+        if (chiave > oggi) ancora += perGiorno;
+        else if (chiave === oggi) ancora += Math.max(0, perGiorno - fattiG);
+        if (perGiorno > 0 && fattiG === perGiorno && capG === 0 && chiave <= oggi) perfetti++;
+      }
+      penalita += capG;
+      giorni.push({ chiave, att, fattiG, capG, futuro: chiave > oggi, oggi: chiave === oggi });
+    }
+    const massimo = giorniAttivi * perGiorno;
+    const valore = massimo > 0 ? Number(config.importoSettimanale || 0) / massimo : 0;
+    const netti = Math.max(0, fatti - penalita);
+    return {
+      inizio, fine: piu(inizio, 6), giorni, giorniAttivi, massimo, valore,
+      fatti, penalita, netti, perfetti,
+      potenziale: Math.min(massimo, netti + ancora),
+      euro: netti * valore,
+      chiusa: piu(inizio, 6) < oggi,
+      corrente: inizio === lunedi(oggi),
+    };
+  };
+
+  const storico = [];
+  for (let i = 1; i <= 6; i++) {
+    const s = settimana(piu(lunedi(oggi), -7 * i));
+    if (s.fatti > 0 || s.penalita > 0) storico.push(s);
+  }
+  return { perGiorno, set: settimana(lunedi(vista.sel)), storico };
+}
+
+/* ------------------------------------------------------------------
+   5. DISEGNO
+------------------------------------------------------------------ */
+function barattolo(pieno) {
+  const p = Math.max(0, Math.min(1, pieno || 0));
+  const cima = 124 - p * 88;
+  const sagoma = "M26,46 Q26,32 42,32 L88,32 Q104,32 104,46 L104,120 Q104,134 88,134 L42,134 Q26,134 26,120 Z";
+  return `<svg class="pg-barattolo" viewBox="0 0 130 150" role="img"
+    aria-label="Salvadanaio pieno al ${Math.round(p * 100)} per cento">
+    <defs><clipPath id="pg-clip"><path d="${sagoma}"/></clipPath></defs>
+    <rect x="38" y="14" width="54" height="18" rx="7" fill="var(--zucca)"
+      stroke="var(--inchiostro)" stroke-width="3"/>
+    <rect x="57" y="20" width="16" height="6" rx="3" fill="var(--inchiostro)"/>
+    <g clip-path="url(#pg-clip)">
+      <rect x="20" y="0" width="90" height="150" fill="var(--carta)"/>
+      ${p > 0.01 ? `<rect x="20" y="${cima}" width="90" height="150" fill="var(--zucca)"/>
+        <ellipse cx="65" cy="${cima}" rx="45" ry="7" fill="var(--zucca-chiaro)"/>` : ""}
+    </g>
+    <path d="${sagoma}" fill="none" stroke="var(--inchiostro)" stroke-width="3.5" stroke-linejoin="round"/>
+    <path d="M38,60 Q34,80 36,104" fill="none" stroke="var(--carta)" stroke-width="4"
+      stroke-linecap="round" opacity="0.7"/>
+  </svg>`;
+}
+
+function editor(titolo, voci, campo, segno, placeholder) {
+  return `<div class="pg-editor"><h2>${titolo}</h2>
+    ${voci.map((v) => `<div class="pg-editor-riga">
+      <input type="text" value="${esc(v.testo)}" placeholder="${placeholder}"
+        data-campo="${campo}" data-id="${v.id}" data-chiave="testo" />
+      <span class="pg-segno">${segno}</span>
+      <input class="pg-num" type="number" min="1" max="20" value="${v.gettoni}"
+        data-campo="${campo}" data-id="${v.id}" data-chiave="gettoni" />
+      <button class="pg-elimina" data-az="togli" data-campo="${campo}" data-id="${v.id}"
+        aria-label="Togli riga">×</button>
+    </div>`).join("")}
+    <button class="pg-aggiungi" data-az="aggiungi" data-campo="${campo}">Aggiungi una riga</button>
+  </div>`;
+}
+
+function pannelloGiorno(c) {
+  const { config, registro } = dati;
+  const sel = vista.sel;
+  const d = daIso(sel);
+  const rec = registro[sel] || { fatte: {}, capricci: {} };
+  const fatti = config.attivita.reduce(
+    (s, x) => s + (rec.fatte && rec.fatte[x.id] ? Number(x.gettoni || 0) : 0), 0);
+  const persi = config.capricci.reduce(
+    (s, x) => s + ((rec.capricci && rec.capricci[x.id]) || 0) * Number(x.gettoni || 0), 0);
+
+  return `<div class="pg-pannello">
+    <div class="pg-datebar">
+      <button data-az="giorno" data-n="-1" aria-label="Giorno precedente">‹</button>
+      <div><strong>${DOW[d.getDay()]} ${d.getDate()} ${MESI[d.getMonth()]}</strong>
+        ${sel === iso(new Date()) ? '<span class="pg-oggi-tag">oggi</span>' : ""}</div>
+      <button data-az="giorno" data-n="1" aria-label="Giorno successivo">›</button>
+    </div>
+    ${attivoIn(d, config.giorni) ? "" :
+      '<p class="pg-libero">Giorno libero: non conta per la paghetta.</p>'}
+    <ul class="pg-lista">
+      ${config.attivita.length === 0 ?
+        '<li class="pg-vuoto">Nessuna attività. Aggiungile in Regole.</li>' : ""}
+      ${config.attivita.map((a) => {
+        const ok = !!(rec.fatte && rec.fatte[a.id]);
+        return `<li><button class="pg-voce ${ok ? "fatta" : ""}" data-az="spunta" data-id="${a.id}">
+          <span class="pg-box" aria-hidden="true">${ok ? "✓" : ""}</span>
+          <span class="pg-voce-testo">${esc(a.testo)}</span>
+          <span class="pg-premio">+${a.gettoni}</span>
+        </button></li>`;
+      }).join("")}
+    </ul>
+    <div class="pg-capricci"><h2>Capricci</h2>
+      ${config.capricci.map((x) => {
+        const n = (rec.capricci && rec.capricci[x.id]) || 0;
+        return `<div class="pg-cap-riga">
+          <span class="pg-cap-testo">${esc(x.testo)}</span>
+          <span class="pg-costo">−${x.gettoni}</span>
+          <div class="pg-contatore">
+            <button data-az="cap" data-id="${x.id}" data-n="-1" ${n === 0 ? "disabled" : ""}
+              aria-label="Togli">−</button>
+            <b class="${n > 0 ? "acceso" : ""}">${n}</b>
+            <button data-az="cap" data-id="${x.id}" data-n="1" aria-label="Aggiungi">+</button>
+          </div></div>`;
+      }).join("")}
+    </div>
+    <p class="pg-bilancio">Bilancio del giorno:
+      <b>${fatti - persi > 0 ? "+" : ""}${fatti - persi}</b>
+      (${fatti} guadagnati, ${persi} persi)</p>
+  </div>`;
+}
+
+function pannelloSettimana(c) {
+  const s = c.set;
+  const pagata = !!dati.paghe[s.inizio];
+  return `<div class="pg-pannello">
+    <div class="pg-datebar">
+      <button data-az="sett" data-n="-7" aria-label="Settimana precedente">‹</button>
+      <div><strong>${breve(s.inizio)} – ${breve(s.fine)}</strong></div>
+      <button data-az="sett" data-n="7" aria-label="Settimana successiva">›</button>
+    </div>
+    <div class="pg-strip">
+      ${s.giorni.map((g, i) => {
+        const st = !g.att ? "libero" : g.futuro ? "futuro"
+          : c.perGiorno > 0 && g.fattiG === c.perGiorno ? "piena"
+          : g.fattiG > 0 ? "parziale" : "vuota";
+        return `<button class="pg-cella ${st} ${g.oggi ? "adesso" : ""} ${g.chiave === vista.sel ? "scelta" : ""}"
+          data-az="vai" data-d="${g.chiave}">
+          <small>${DOW_MINI[i]}</small><b>${daIso(g.chiave).getDate()}</b>
+          ${g.att && !g.futuro ? `<em>${g.fattiG}/${c.perGiorno}</em>` : ""}
+          ${g.capG > 0 ? '<i class="pg-punto"></i>' : ""}
+        </button>`;
+      }).join("")}
+    </div>
+    <dl class="pg-riepilogo">
+      <div><dt>Giornate perfette</dt><dd>${s.perfetti} su ${s.giorniAttivi}</dd></div>
+      <div><dt>Gettoni guadagnati</dt><dd>${s.fatti}</dd></div>
+      <div><dt>Gettoni persi</dt><dd>${s.penalita}</dd></div>
+      <div><dt>Paghetta della settimana</dt><dd class="pg-forte">${eur(s.euro)}</dd></div>
+    </dl>
+    <button class="pg-paga ${pagata ? "fatto" : ""}" data-az="paga" data-d="${s.inizio}">
+      ${pagata ? "✓ Paghetta consegnata" : "Segna come consegnata"}</button>
+    ${c.storico.length === 0 ? "" : `<div class="pg-storico"><h2>Settimane precedenti</h2>
+      ${c.storico.map((x) => `<button class="pg-storico-riga" data-az="vai" data-d="${x.inizio}">
+        <span>${breve(x.inizio)} – ${breve(x.fine)}</span>
+        <em>${x.netti}/${x.massimo}</em><b>${eur(x.euro)}</b>
+        <i class="${dati.paghe[x.inizio] ? "ok" : ""}">${dati.paghe[x.inizio] ? "✓" : "—"}</i>
+      </button>`).join("")}</div>`}
+  </div>`;
+}
+
+function pannelloRegole(c) {
+  if (!vista.sbloccato) {
+    return `<div class="pg-pannello"><div class="pg-gate">
+      <h2>Solo mamma e papà</h2>
+      <label>Quanto fa ${QUIZ.a} × ${QUIZ.b}?
+        <input type="number" inputmode="numeric" data-az="quiz" /></label>
+    </div></div>`;
+  }
+  const cfg = dati.config;
+  const s = c.set;
+  return `<div class="pg-pannello">
+    <div class="pg-campi">
+      <label>Nome
+        <input type="text" value="${esc(cfg.nome)}" placeholder="come si chiama" data-cfg="nome" /></label>
+      <label>Paghetta della settimana
+        <input type="number" min="0" step="0.5" value="${cfg.importoSettimanale}" data-cfg="importoSettimanale" /></label>
+      <label>Giorni che contano
+        <select data-cfg="giorni">
+          <option value="tutti" ${cfg.giorni === "tutti" ? "selected" : ""}>Tutti i giorni</option>
+          <option value="feriali" ${cfg.giorni === "feriali" ? "selected" : ""}>Solo dal lunedì al venerdì</option>
+        </select></label>
+    </div>
+    <p class="pg-spiega">${s.giorniAttivi} giornate che contano × ${gettoniLabel(c.perGiorno)} al giorno
+      = ${s.massimo} gettoni a settimana. Ogni gettone vale ${eur(s.valore)}.
+      In un mese fanno circa ${eur(Number(cfg.importoSettimanale || 0) * 4.33)}.</p>
+    ${editor("Attività", cfg.attivita, "attivita", "+", "es. Rifare il letto")}
+    ${editor("Capricci", cfg.capricci, "capricci", "−", "es. Risponde male")}
+    <div class="pg-pericolo">
+      <p>Per cancellare tutto lo storico, scrivi AZZERA qui accanto.</p>
+      <input type="text" data-az="azzera" aria-label="Scrivi AZZERA per cancellare" />
+    </div>
+    ${vista.rete === "locale" ? "" : `<div class="pg-pericolo">
+      <p>Per staccare questo dispositivo e reinserire la parola di famiglia.</p>
+      <button class="pg-elimina" style="width:auto;padding:0 14px" data-az="esci">Esci</button>
+    </div>`}
+  </div>`;
+}
+
+function disegna() {
+  const app = document.getElementById("app");
+  if (!dati) { app.innerHTML = '<p class="pg-boot">Apro il salvadanaio…</p>'; return; }
+  const c = calcola();
+  const s = c.set;
+  const pieno = s.massimo > 0 ? s.netti / s.massimo : 0;
+  const spia = vista.rete === "ok" ? "" : vista.rete === "locale" ? " locale" : " giu";
+  const titoli = { oggi: "Giornata", settimana: "Settimana", regole: "Regole" };
+
+  app.innerHTML = `
+    <header class="pg-testa">
+      <h1>${dati.config.nome ? `Il salvadanaio di ${esc(dati.config.nome)}` : "Il salvadanaio"}</h1>
+      <p>settimana dal ${breve(s.inizio)} al ${breve(s.fine)}${s.corrente ? "" : s.chiusa ? " · chiusa" : " · prossima"}<span class="pg-stato-rete${spia}"></span></p>
+    </header>
+    <section class="pg-hero">
+      ${barattolo(pieno)}
+      <div class="pg-hero-testo">
+        <p class="pg-euro">${eur(s.euro)}</p>
+        <p class="pg-hero-riga">${gettoniLabel(s.netti)} su ${s.massimo} — un gettone vale ${eur(s.valore)}</p>
+        <div class="pg-barra">
+          <span style="width:${Math.min(100, pieno * 100)}%"></span>
+          <i style="left:${Math.min(100, (s.potenziale / (s.massimo || 1)) * 100)}%"></i>
+        </div>
+        <p class="pg-hero-nota">${s.chiusa
+          ? `Settimana finita: ${dati.paghe[s.inizio] ? "già pagata" : "da pagare"}`
+          : `Finendo la settimana senza sbavature: ${eur(s.potenziale * s.valore)}`}${
+          s.penalita > 0 ? ` · ${gettoniLabel(s.penalita)} persi per i capricci` : ""}</p>
+      </div>
+    </section>
+    ${vista.avviso ? `<p class="pg-avviso">${esc(vista.avviso)}</p>` : ""}
+    <nav class="pg-tab">
+      ${Object.keys(titoli).map((k) => `<button class="${vista.tab === k ? "attivo" : ""}"
+        data-az="tab" data-k="${k}">${titoli[k]}</button>`).join("")}
+    </nav>
+    ${vista.tab === "oggi" ? pannelloGiorno(c)
+      : vista.tab === "settimana" ? pannelloSettimana(c) : pannelloRegole(c)}`;
+}
+
+/* ------------------------------------------------------------------
+   6. INTERAZIONI
+------------------------------------------------------------------ */
+document.getElementById("app").addEventListener("click", (ev) => {
+  const b = ev.target.closest("[data-az]");
+  if (!b || b.tagName === "INPUT") return;
+  const az = b.dataset.az;
+
+  if (az === "tab") { vista.tab = b.dataset.k; disegna(); return; }
+  if (az === "giorno") { vista.sel = piu(vista.sel, Number(b.dataset.n)); disegna(); return; }
+  if (az === "sett") { vista.sel = piu(vista.sel, Number(b.dataset.n)); disegna(); return; }
+  if (az === "vai") { vista.sel = b.dataset.d; vista.tab = "oggi"; disegna(); return; }
+  if (az === "esci") { localStorage.removeItem(CHIAVE_PASS); location.reload(); return; }
+
+  if (az === "spunta") {
+    patchGiorno(vista.sel, (r) => {
+      if (r.fatte[b.dataset.id]) delete r.fatte[b.dataset.id];
+      else r.fatte[b.dataset.id] = true;
+      return r;
+    });
+    return;
+  }
+  if (az === "cap") {
+    patchGiorno(vista.sel, (r) => {
+      const v = (r.capricci[b.dataset.id] || 0) + Number(b.dataset.n);
+      if (v > 0) r.capricci[b.dataset.id] = v;
+      else delete r.capricci[b.dataset.id];
+      return r;
+    });
+    return;
+  }
+  if (az === "paga") {
+    const paghe = { ...dati.paghe };
+    if (paghe[b.dataset.d]) delete paghe[b.dataset.d];
+    else paghe[b.dataset.d] = true;
+    salva({ ...dati, paghe });
+    return;
+  }
+  if (az === "togli") {
+    const campo = b.dataset.campo;
+    patchConfig({ [campo]: dati.config[campo].filter((x) => x.id !== b.dataset.id) });
+    return;
+  }
+  if (az === "aggiungi") {
+    const campo = b.dataset.campo;
+    patchConfig({ [campo]: [...dati.config[campo], { id: uid(), testo: "", gettoni: 1 }] });
+  }
+});
+
+document.getElementById("app").addEventListener("input", (ev) => {
+  const el = ev.target;
+  if (el.dataset.az === "quiz") {
+    if (Number(el.value) === QUIZ.a * QUIZ.b) { vista.sbloccato = true; disegna(); }
+    return;
+  }
+  if (el.dataset.az === "azzera" && el.value.trim().toUpperCase() === "AZZERA") {
+    salva({ config: dati.config, registro: {}, paghe: {} });
+  }
+});
+
+document.getElementById("app").addEventListener("change", (ev) => {
+  const el = ev.target;
+  if (el.dataset.cfg) {
+    const k = el.dataset.cfg;
+    if (k === "importoSettimanale") patchConfig({ importoSettimanale: Math.max(0, Number(el.value) || 0) });
+    else if (k === "nome") patchConfig({ nome: el.value.trim() });
+    else patchConfig({ [k]: el.value });
+    return;
+  }
+  if (el.dataset.campo) {
+    const { campo, id, chiave } = el.dataset;
+    const valore = chiave === "gettoni" ? Math.max(1, Number(el.value) || 1) : el.value;
+    patchConfig({ [campo]: dati.config[campo].map((x) => (x.id === id ? { ...x, [chiave]: valore } : x)) });
+  }
+});
+
+/* ------------------------------------------------------------------
+   7. AVVIO
+------------------------------------------------------------------ */
+function chiediParola(errore) {
+  document.getElementById("app").innerHTML = `
+    <header class="pg-testa"><h1>Il salvadanaio</h1></header>
+    <div class="pg-pannello"><div class="pg-gate">
+      <h2>Parola di famiglia</h2>
+      <label><input type="password" id="pg-pass" autocomplete="off" style="width:220px" /></label>
+      <button class="pg-paga" id="pg-entra">Entra</button>
+      <p>${errore || "La stessa parola su tutti i dispositivi apre lo stesso salvadanaio. Va scritta una volta sola per dispositivo."}</p>
+    </div></div>`;
+  const entra = () => {
+    const v = document.getElementById("pg-pass").value.trim();
+    if (v.length < 4) { chiediParola("Serve una parola di almeno 4 lettere."); return; }
+    localStorage.setItem(CHIAVE_PASS, v);
+    avvia();
+  };
+  document.getElementById("pg-entra").addEventListener("click", entra);
+  document.getElementById("pg-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") entra(); });
+}
+
+async function avvia() {
+  const locali = localStorage.getItem(CHIAVE_LOCALE);
+  dati = normalizza(locali ? JSON.parse(locali) : null);
+
+  if (!FIREBASE.apiKey) {
+    vista.rete = "locale";
+    disegna();
+    return;
+  }
+
+  const parola = localStorage.getItem(CHIAVE_PASS);
+  if (!parola) { chiediParola(); return; }
+
+  vista.rete = "giu";
+  disegna();
+
+  try {
+    const base = `https://www.gstatic.com/firebasejs/${VERSIONE_SDK}`;
+    const [{ initializeApp }, { getAuth, signInAnonymously }, fs] = await Promise.all([
+      import(`${base}/firebase-app.js`),
+      import(`${base}/firebase-auth.js`),
+      import(`${base}/firebase-firestore.js`),
+    ]);
+    const app = initializeApp(FIREBASE);
+    await signInAnonymously(getAuth(app));
+    const db = fs.getFirestore(app);
+    const rif = fs.doc(db, "paghette", await impronta(parola));
+
+    scriviRemoto = (d) => fs.setDoc(rif, d);
+    fs.onSnapshot(rif, (istantanea) => {
+      vista.rete = "ok";
+      if (istantanea.exists()) collega(istantanea.data());
+      else { salva(dati); }
+      disegna();
+    }, () => {
+      vista.rete = "giu";
+      vista.avviso = "Connessione al salvadanaio condiviso interrotta.";
+      disegna();
+    });
+  } catch (e) {
+    vista.rete = "giu";
+    vista.avviso = "Non riesco a collegarmi: sto usando i dati di questo dispositivo.";
+    disegna();
+  }
+}
+
+avvia();
+
+</script>
+</body>
+</html>
