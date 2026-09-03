@@ -137,6 +137,11 @@ const piu = (s, n) => { const d = daIso(s); d.setDate(d.getDate() + n); return i
 const lunedi = (s) => { const d = daIso(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
 const eur = (n) => (Number.isFinite(n) ? n : 0).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 const attivoIn = (d, modo) => (modo === "feriali" ? d.getDay() >= 1 && d.getDay() <= 5 : true);
+/* Giorni in cui vale un'attivita', in numerazione getDay(). Chi non ha il campo vale sempre. */
+const giorniDi = (a) => (Array.isArray(a.giorni) ? a.giorni : [0, 1, 2, 3, 4, 5, 6]);
+const attivaIl = (a, dow) => giorniDi(a).includes(dow);
+const gettoniIl = (config, dow) => config.attivita.reduce(
+  (s, x) => s + (attivaIl(x, dow) ? Number(x.gettoni || 0) : 0), 0);
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
   (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
@@ -198,26 +203,28 @@ const barattolo = (pieno) => {
 function calcola() {
   const { config, registro } = dati;
   const oggi = iso(new Date());
-  const perGiorno = config.attivita.reduce((s, x) => s + Number(x.gettoni || 0), 0);
   const inizio = lunedi(sel);
-  let attivi = 0, fatti = 0, persi = 0;
+  let attivi = 0, fatti = 0, persi = 0, massimo = 0;
   const giorni = [];
   for (let i = 0; i < 7; i++) {
     const chiave = piu(inizio, i);
-    const att = attivoIn(daIso(chiave), config.giorni);
+    const data = daIso(chiave);
+    const dow = data.getDay();
+    const att = attivoIn(data, config.giorni);
+    const maxG = gettoniIl(config, dow);
     const rec = registro[chiave] || {};
     const fattiG = config.attivita.reduce(
-      (s, x) => s + (rec.fatte && rec.fatte[x.id] ? Number(x.gettoni || 0) : 0), 0);
+      (s, x) => s + (attivaIl(x, dow) && rec.fatte && rec.fatte[x.id]
+        ? Number(x.gettoni || 0) : 0), 0);
     const capG = config.capricci.reduce(
       (s, x) => s + ((rec.capricci && rec.capricci[x.id]) || 0) * Number(x.gettoni || 0), 0);
-    if (att) { attivi += 1; fatti += fattiG; }
+    if (att) { attivi += 1; fatti += fattiG; massimo += maxG; }
     persi += capG;
-    giorni.push({ chiave, att, fattiG, capG, futuro: chiave > oggi });
+    giorni.push({ chiave, att, maxG, fattiG, capG, futuro: chiave > oggi });
   }
-  const massimo = attivi * perGiorno;
   const netti = Math.max(0, fatti - persi);
   return {
-    perGiorno, giorni, massimo, netti,
+    giorni, massimo, netti,
     valore: massimo > 0 ? Number(config.importoSettimanale || 0) / massimo : 0,
   };
 }
@@ -264,7 +271,7 @@ function disegna() {
         <div class="strip">
           ${c.giorni.map((g, i) => {
             const st = !g.att ? "libero" : g.futuro ? "futuro"
-              : c.perGiorno > 0 && g.fattiG === c.perGiorno ? "piena"
+              : g.maxG > 0 && g.fattiG === g.maxG ? "piena"
               : g.fattiG > 0 ? "parziale" : "vuota";
             return `<button class="cella ${st} ${g.chiave === sel ? "scelta" : ""}" data-d="${g.chiave}">
               <small>${DOW_MINI[i]}</small><b>${daIso(g.chiave).getDate()}</b></button>`;
@@ -274,14 +281,19 @@ function disegna() {
 
       <div class="riquadro destra">
         <div class="lista">
-          ${dati.config.attivita.map((a) => {
-            const ok = !!(rec.fatte && rec.fatte[a.id]);
-            return `<div class="voce ${ok ? "fatta" : ""}">
-              <span class="segno">\u2713</span>
-              <span class="testo">${esc(a.testo)}</span>
-              <b>+${a.gettoni}</b>
-            </div>`;
-          }).join("")}
+          ${(() => {
+            const diOggi = dati.config.attivita.filter((a) => attivaIl(a, d.getDay()));
+            if (diOggi.length === 0)
+              return '<div class="avviso">Oggi nessun compito</div>';
+            return diOggi.map((a) => {
+              const ok = !!(rec.fatte && rec.fatte[a.id]);
+              return `<div class="voce ${ok ? "fatta" : ""}">
+                <span class="segno">\u2713</span>
+                <span class="testo">${esc(a.testo)}</span>
+                <b>+${a.gettoni}</b>
+              </div>`;
+            }).join("");
+          })()}
         </div>
         <div class="capricci">
           <h2>Capricci</h2>

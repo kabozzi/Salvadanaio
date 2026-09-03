@@ -219,6 +219,16 @@
     width: 100%; padding: 12px; background: transparent; font-weight: 700; font-size: .88rem;
     border: 2.5px dashed var(--inchiostro); border-radius: 12px;
   }
+  .pg-editor-voce { margin-bottom: 12px; }
+  .pg-giorni { display: flex; gap: 4px; margin-top: 5px; }
+  .pg-giorni button {
+    flex: 1; padding: 6px 0; font-size: .72rem; font-weight: 800; line-height: 1;
+    background: #fff; border: 2px solid var(--grigio); border-radius: 8px;
+    color: var(--grigio);
+  }
+  .pg-giorni button.on {
+    background: var(--mela); border-color: var(--inchiostro); color: #fff;
+  }
   .pg-pericolo {
     border-top: 2.5px solid var(--inchiostro); padding-top: 14px; margin-top: 4px;
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
@@ -262,10 +272,10 @@ const CONFIG_INIZIALE = {
   importoSettimanale: 2.5,
   giorni: "tutti",
   attivita: [
-    { id: "a1", testo: "Rifare il letto", gettoni: 1 },
-    { id: "a2", testo: "Sparecchiare la tavola", gettoni: 1 },
-    { id: "a3", testo: "Rimettere a posto i giochi", gettoni: 1 },
-    { id: "a4", testo: "Preparare lo zaino", gettoni: 1 },
+    { id: "a1", testo: "Rifare il letto", gettoni: 1, giorni: [0, 1, 2, 3, 4, 5, 6] },
+    { id: "a2", testo: "Sparecchiare la tavola", gettoni: 1, giorni: [0, 1, 2, 3, 4, 5, 6] },
+    { id: "a3", testo: "Rimettere a posto i giochi", gettoni: 1, giorni: [0, 1, 2, 3, 4, 5, 6] },
+    { id: "a4", testo: "Preparare lo zaino", gettoni: 1, giorni: [1, 2, 3, 4, 5] },
   ],
   capricci: [
     { id: "c1", testo: "Piange o urla per ottenere qualcosa", gettoni: 2 },
@@ -290,6 +300,14 @@ const piu = (s, n) => { const d = daIso(s); d.setDate(d.getDate() + n); return i
 const lunedi = (s) => { const d = daIso(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
 const eur = (n) => (Number.isFinite(n) ? n : 0).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
 const attivoIn = (d, modo) => (modo === "feriali" ? d.getDay() >= 1 && d.getDay() <= 5 : true);
+/* Giorni in cui vale un'attivita', in numerazione getDay(): 0 domenica ... 6 sabato.
+   Le attivita' salvate prima di questa funzione non hanno il campo: valgono sempre. */
+const DOW_LET = ["D", "L", "M", "M", "G", "V", "S"];
+const ORDINE_DOW = [1, 2, 3, 4, 5, 6, 0];
+const giorniDi = (a) => (Array.isArray(a.giorni) ? a.giorni : [0, 1, 2, 3, 4, 5, 6]);
+const attivaIl = (a, dow) => giorniDi(a).includes(dow);
+const gettoniIl = (config, dow) => config.attivita.reduce(
+  (s, x) => s + (attivaIl(x, dow) ? Number(x.gettoni || 0) : 0), 0);
 const gettoniLabel = (n) => `${n} ${n === 1 ? "gettone" : "gettoni"}`;
 const breve = (s) => { const d = daIso(s); return `${d.getDate()} ${MESI[d.getMonth()].slice(0, 3)}`; };
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
@@ -363,30 +381,32 @@ function collega(remoto) {
 function calcola() {
   const { config, registro } = dati;
   const oggi = iso(new Date());
-  const perGiorno = config.attivita.reduce((s, x) => s + Number(x.gettoni || 0), 0);
-
   const settimana = (inizio) => {
-    let giorniAttivi = 0, fatti = 0, penalita = 0, ancora = 0, perfetti = 0;
+    let giorniAttivi = 0, fatti = 0, penalita = 0, ancora = 0, perfetti = 0, massimo = 0;
     const giorni = [];
     for (let i = 0; i < 7; i++) {
       const chiave = piu(inizio, i);
-      const att = attivoIn(daIso(chiave), config.giorni);
+      const data = daIso(chiave);
+      const dow = data.getDay();
+      const att = attivoIn(data, config.giorni);
+      const maxG = gettoniIl(config, dow);
       const rec = registro[chiave] || {};
       const fattiG = config.attivita.reduce(
-        (s, x) => s + (rec.fatte && rec.fatte[x.id] ? Number(x.gettoni || 0) : 0), 0);
+        (s, x) => s + (attivaIl(x, dow) && rec.fatte && rec.fatte[x.id]
+          ? Number(x.gettoni || 0) : 0), 0);
       const capG = config.capricci.reduce(
         (s, x) => s + ((rec.capricci && rec.capricci[x.id]) || 0) * Number(x.gettoni || 0), 0);
       if (att) {
         giorniAttivi++;
+        massimo += maxG;
         fatti += fattiG;
-        if (chiave > oggi) ancora += perGiorno;
-        else if (chiave === oggi) ancora += Math.max(0, perGiorno - fattiG);
-        if (perGiorno > 0 && fattiG === perGiorno && capG === 0 && chiave <= oggi) perfetti++;
+        if (chiave > oggi) ancora += maxG;
+        else if (chiave === oggi) ancora += Math.max(0, maxG - fattiG);
+        if (maxG > 0 && fattiG === maxG && capG === 0 && chiave <= oggi) perfetti++;
       }
       penalita += capG;
-      giorni.push({ chiave, att, fattiG, capG, futuro: chiave > oggi, oggi: chiave === oggi });
+      giorni.push({ chiave, att, maxG, fattiG, capG, futuro: chiave > oggi, oggi: chiave === oggi });
     }
-    const massimo = giorniAttivi * perGiorno;
     const valore = massimo > 0 ? Number(config.importoSettimanale || 0) / massimo : 0;
     const netti = Math.max(0, fatti - penalita);
     return {
@@ -404,7 +424,7 @@ function calcola() {
     const s = settimana(piu(lunedi(oggi), -7 * i));
     if (s.fatti > 0 || s.penalita > 0) storico.push(s);
   }
-  return { perGiorno, set: settimana(lunedi(vista.sel)), storico };
+  return { set: settimana(lunedi(vista.sel)), storico };
 }
 
 /* ------------------------------------------------------------------
@@ -433,14 +453,21 @@ function barattolo(pieno) {
 
 function editor(titolo, voci, campo, segno, placeholder) {
   return `<div class="pg-editor"><h2>${titolo}</h2>
-    ${voci.map((v) => `<div class="pg-editor-riga">
-      <input type="text" value="${esc(v.testo)}" placeholder="${placeholder}"
-        data-campo="${campo}" data-id="${v.id}" data-chiave="testo" />
-      <span class="pg-segno">${segno}</span>
-      <input class="pg-num" type="number" min="1" max="20" value="${v.gettoni}"
-        data-campo="${campo}" data-id="${v.id}" data-chiave="gettoni" />
-      <button class="pg-elimina" data-az="togli" data-campo="${campo}" data-id="${v.id}"
-        aria-label="Togli riga">×</button>
+    ${voci.map((v) => `<div class="pg-editor-voce">
+      <div class="pg-editor-riga">
+        <input type="text" value="${esc(v.testo)}" placeholder="${placeholder}"
+          data-campo="${campo}" data-id="${v.id}" data-chiave="testo" />
+        <span class="pg-segno">${segno}</span>
+        <input class="pg-num" type="number" min="1" max="20" value="${v.gettoni}"
+          data-campo="${campo}" data-id="${v.id}" data-chiave="gettoni" />
+        <button class="pg-elimina" data-az="togli" data-campo="${campo}" data-id="${v.id}"
+          aria-label="Togli riga">×</button>
+      </div>
+      ${campo === "attivita" ? `<div class="pg-giorni">
+        ${ORDINE_DOW.map((dw) => `<button data-az="dow" data-id="${v.id}" data-n="${dw}"
+          class="${attivaIl(v, dw) ? "on" : ""}"
+          aria-label="${DOW[dw]}">${DOW_LET[dw]}</button>`).join("")}
+      </div>` : ""}
     </div>`).join("")}
     <button class="pg-aggiungi" data-az="aggiungi" data-campo="${campo}">Aggiungi una riga</button>
   </div>`;
@@ -452,7 +479,8 @@ function pannelloGiorno(c) {
   const d = daIso(sel);
   const rec = registro[sel] || { fatte: {}, capricci: {} };
   const fatti = config.attivita.reduce(
-    (s, x) => s + (rec.fatte && rec.fatte[x.id] ? Number(x.gettoni || 0) : 0), 0);
+    (s, x) => s + (attivaIl(x, d.getDay()) && rec.fatte && rec.fatte[x.id]
+      ? Number(x.gettoni || 0) : 0), 0);
   const persi = config.capricci.reduce(
     (s, x) => s + ((rec.capricci && rec.capricci[x.id]) || 0) * Number(x.gettoni || 0), 0);
 
@@ -466,16 +494,21 @@ function pannelloGiorno(c) {
     ${attivoIn(d, config.giorni) ? "" :
       '<p class="pg-libero">Giorno libero: non conta per la paghetta.</p>'}
     <ul class="pg-lista">
-      ${config.attivita.length === 0 ?
-        '<li class="pg-vuoto">Nessuna attività. Aggiungile in Regole.</li>' : ""}
-      ${config.attivita.map((a) => {
-        const ok = !!(rec.fatte && rec.fatte[a.id]);
-        return `<li><button class="pg-voce ${ok ? "fatta" : ""}" data-az="spunta" data-id="${a.id}">
-          <span class="pg-box" aria-hidden="true">${ok ? "✓" : ""}</span>
-          <span class="pg-voce-testo">${esc(a.testo)}</span>
-          <span class="pg-premio">+${a.gettoni}</span>
-        </button></li>`;
-      }).join("")}
+      ${config.attivita.length === 0
+        ? '<li class="pg-vuoto">Nessuna attività. Aggiungile in Regole.</li>'
+        : (() => {
+            const diOggi = config.attivita.filter((a) => attivaIl(a, d.getDay()));
+            if (diOggi.length === 0)
+              return '<li class="pg-vuoto">Nessun compito previsto in questo giorno.</li>';
+            return diOggi.map((a) => {
+              const ok = !!(rec.fatte && rec.fatte[a.id]);
+              return `<li><button class="pg-voce ${ok ? "fatta" : ""}" data-az="spunta" data-id="${a.id}">
+                <span class="pg-box" aria-hidden="true">${ok ? "✓" : ""}</span>
+                <span class="pg-voce-testo">${esc(a.testo)}</span>
+                <span class="pg-premio">+${a.gettoni}</span>
+              </button></li>`;
+            }).join("");
+          })()}
     </ul>
     <div class="pg-capricci"><h2>Capricci</h2>
       ${config.capricci.map((x) => {
@@ -509,12 +542,12 @@ function pannelloSettimana(c) {
     <div class="pg-strip">
       ${s.giorni.map((g, i) => {
         const st = !g.att ? "libero" : g.futuro ? "futuro"
-          : c.perGiorno > 0 && g.fattiG === c.perGiorno ? "piena"
+          : g.maxG > 0 && g.fattiG === g.maxG ? "piena"
           : g.fattiG > 0 ? "parziale" : "vuota";
         return `<button class="pg-cella ${st} ${g.oggi ? "adesso" : ""} ${g.chiave === vista.sel ? "scelta" : ""}"
           data-az="vai" data-d="${g.chiave}">
           <small>${DOW_MINI[i]}</small><b>${daIso(g.chiave).getDate()}</b>
-          ${g.att && !g.futuro ? `<em>${g.fattiG}/${c.perGiorno}</em>` : ""}
+          ${g.att && !g.futuro ? `<em>${g.fattiG}/${g.maxG}</em>` : ""}
           ${g.capG > 0 ? '<i class="pg-punto"></i>' : ""}
         </button>`;
       }).join("")}
@@ -558,9 +591,9 @@ function pannelloRegole(c) {
           <option value="feriali" ${cfg.giorni === "feriali" ? "selected" : ""}>Solo dal lunedì al venerdì</option>
         </select></label>
     </div>
-    <p class="pg-spiega">${s.giorniAttivi} giornate che contano × ${gettoniLabel(c.perGiorno)} al giorno
-      = ${s.massimo} gettoni a settimana. Ogni gettone vale ${eur(s.valore)}.
-      In un mese fanno circa ${eur(Number(cfg.importoSettimanale || 0) * 4.33)}.</p>
+    <p class="pg-spiega">Ogni attività conta solo nei giorni che spunti sotto di essa.
+      Questa settimana fanno ${s.massimo} gettoni in tutto, e ogni gettone vale ${eur(s.valore)}.
+      In un mese sono circa ${eur(Number(cfg.importoSettimanale || 0) * 4.33)}.</p>
     ${editor("Attività", cfg.attivita, "attivita", "+", "es. Rifare il letto")}
     ${editor("Capricci", cfg.capricci, "capricci", "−", "es. Risponde male")}
     <div class="pg-pericolo">
@@ -653,6 +686,20 @@ document.getElementById("app").addEventListener("click", (ev) => {
   if (az === "togli") {
     const campo = b.dataset.campo;
     patchConfig({ [campo]: dati.config[campo].filter((x) => x.id !== b.dataset.id) });
+    return;
+  }
+  if (az === "dow") {
+    const id = b.dataset.id;
+    const dw = Number(b.dataset.n);
+    patchConfig({
+      attivita: dati.config.attivita.map((x) => {
+        if (x.id !== id) return x;
+        const g = giorniDi(x).slice();
+        const i = g.indexOf(dw);
+        if (i >= 0) g.splice(i, 1); else g.push(dw);
+        return { ...x, giorni: g.sort((p, q) => p - q) };
+      }),
+    });
     return;
   }
   if (az === "aggiungi") {
