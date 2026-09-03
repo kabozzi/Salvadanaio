@@ -7,122 +7,112 @@
 <title>Il salvadanaio</title>
 <style>
   :root {
-    --sfondo: #cfe3dc;
-    --carta: #fdf9f0;
-    --inchiostro: #23332f;
-    --mela: #5b9a31;
-    --zucca: #efa022;
-    --zucca-chiaro: #f8c96f;
-    --lampone: #c33f66;
-    --grigio: #a9bcb5;
+    --sfondo: #cfe3dc; --carta: #fdf9f0; --inchiostro: #23332f; --mela: #5b9a31;
+    --zucca: #efa022; --zucca-chiaro: #f8c96f; --lampone: #c33f66; --grigio: #a9bcb5;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body { height: 100%; overflow: hidden; }
+  html, body { height: 100%; overflow: hidden; background: var(--sfondo); }
   body {
     font-family: ui-rounded, "SF Pro Rounded", "Segoe UI Variable Display", Nunito,
       "Trebuchet MS", system-ui, sans-serif;
-    color: var(--inchiostro);
-    background: var(--sfondo);
-    -webkit-text-size-adjust: 100%;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
+    color: var(--inchiostro); user-select: none;
+    -webkit-text-size-adjust: 100%; -webkit-tap-highlight-color: transparent;
   }
 
-  .schermo { height: 100vh; display: flex; flex-direction: column; padding: 2vh 1.6vw; gap: 1.6vh; }
+  /* Il palco ha dimensioni fisse: viene scalato da JS per entrare nello schermo. */
+  #palco {
+    position: absolute; top: 0; left: 0; width: 1280px; height: 620px;
+    transform-origin: top left; display: flex; flex-direction: column;
+    padding: 14px 18px; gap: 12px;
+  }
 
-  .testa { display: flex; align-items: center; gap: 1.5vw; flex: none; }
-  .titolo { font-size: clamp(15px, 3.4vh, 30px); font-weight: 800; letter-spacing: -0.01em; }
-  .spia { width: 1.4vh; height: 1.4vh; min-width: 8px; min-height: 8px; border-radius: 50%;
-          background: var(--grigio); flex: none; }
+  .testa { display: flex; align-items: center; gap: 14px; flex: none; height: 64px; }
+  .titolo { font-size: 34px; font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+  .spia { width: 13px; height: 13px; border-radius: 50%; background: var(--grigio); flex: none; }
   .spia.ok { background: var(--mela); }
   .spia.giu { background: var(--lampone); }
   .riempi { flex: 1; }
-  .nav { display: flex; align-items: center; gap: 1vw; flex: none; }
+  .nav { display: flex; align-items: center; gap: 14px; flex: none; }
   .nav button {
     font: inherit; color: inherit; background: var(--carta); cursor: pointer;
-    border: 0.35vh solid var(--inchiostro); border-radius: 50%;
-    width: clamp(38px, 7vh, 62px); height: clamp(38px, 7vh, 62px);
-    font-size: clamp(18px, 3.6vh, 30px); line-height: 1;
+    border: 4px solid var(--inchiostro); border-radius: 50%;
+    width: 58px; height: 58px; font-size: 30px; line-height: 1;
   }
   .nav button:active { background: var(--zucca-chiaro); }
-  .giorno { font-size: clamp(14px, 3vh, 26px); font-weight: 700; text-align: center;
-            min-width: 11vw; }
-  .oggi { display: inline-block; margin-left: 0.6vw; padding: 0.2vh 0.8vw;
-          font-size: clamp(10px, 1.9vh, 16px); font-weight: 700;
-          background: var(--zucca-chiaro); border-radius: 1vh; }
+  .giorno { font-size: 30px; font-weight: 700; text-align: center; min-width: 300px;
+            white-space: nowrap; }
+  .oggi { display: inline-block; margin-left: 10px; padding: 3px 12px; font-size: 18px;
+          font-weight: 700; background: var(--zucca-chiaro); border-radius: 10px;
+          vertical-align: middle; }
 
-  .corpo { flex: 1; min-height: 0; display: flex; gap: 1.6vw; }
-  .riquadro {
-    background: var(--carta); border: 0.4vh solid var(--inchiostro);
-    border-radius: 2.4vh; padding: 2vh 1.6vw; min-height: 0;
-  }
+  .corpo { flex: 1; min-height: 0; display: flex; gap: 18px; }
+  .riquadro { background: var(--carta); border: 4px solid var(--inchiostro);
+              border-radius: 26px; padding: 18px; min-height: 0; }
 
-  .sinistra { flex: 0 0 31%; display: flex; flex-direction: column; align-items: center;
-              justify-content: space-between; gap: 1vh; }
-  .barattolo { height: 26vh; width: auto; flex: none; }
-  .euro { font-size: clamp(26px, 8.4vh, 72px); font-weight: 800; line-height: 1;
-          letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
-  .gettoni { font-size: clamp(11px, 2.2vh, 19px); opacity: .7; text-align: center; }
-  .barra { width: 100%; height: 1.8vh; min-height: 10px; border: 0.3vh solid var(--inchiostro);
-           border-radius: 1vh; background: #fff; flex: none; }
-  .barra span { display: block; height: 100%; background: var(--mela); border-radius: 0.8vh; }
-  .strip { display: flex; gap: 0.5vw; width: 100%; flex: none; }
+  .sinistra { flex: 0 0 360px; display: flex; flex-direction: column;
+              align-items: center; justify-content: space-between; }
+  .barattolo { height: 190px; width: auto; flex: none; }
+  .euro { font-size: 66px; font-weight: 800; line-height: 1; letter-spacing: -0.03em;
+          font-variant-numeric: tabular-nums; }
+  .gettoni { font-size: 19px; opacity: .7; text-align: center; line-height: 1.3; }
+  .barra { width: 100%; height: 18px; border: 3px solid var(--inchiostro);
+           border-radius: 10px; background: #fff; flex: none; }
+  .barra span { display: block; height: 100%; background: var(--mela); border-radius: 7px; }
+  .strip { display: flex; gap: 6px; width: 100%; flex: none; }
   .cella {
-    flex: 1; border: 0.3vh solid var(--inchiostro); border-radius: 1.2vh; background: #fff;
+    flex: 1; border: 3px solid var(--inchiostro); border-radius: 12px; background: #fff;
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 0.6vh 0; cursor: pointer; font: inherit; color: inherit; min-width: 0;
+    padding: 7px 0; cursor: pointer; font: inherit; color: inherit; min-width: 0;
   }
-  .cella small { font-size: clamp(8px, 1.5vh, 13px); font-weight: 700; opacity: .55; }
-  .cella b { font-size: clamp(10px, 2vh, 17px); }
+  .cella small { font-size: 13px; font-weight: 700; opacity: .55; }
+  .cella b { font-size: 19px; }
   .cella.piena { background: var(--mela); color: #fff; }
   .cella.piena small { opacity: .85; }
   .cella.parziale { background: var(--zucca-chiaro); }
   .cella.futuro, .cella.libero { border-color: var(--grigio); color: var(--grigio); }
   .cella.libero { background: transparent; border-style: dashed; }
-  .cella.scelta { box-shadow: 0 0 0 0.4vh var(--zucca); }
+  .cella.scelta { box-shadow: 0 0 0 5px var(--zucca); }
 
-  .destra { flex: 1; display: flex; flex-direction: column; gap: 1vh; min-width: 0; }
-  .lista { flex: 1; min-height: 0; display: flex; flex-direction: column;
-           justify-content: space-evenly; gap: 0.8vh; }
+  .destra { flex: 1; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .lista { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 10px; }
   .voce {
-    display: flex; align-items: center; gap: 1.2vw; flex: 1 1 0; min-height: 0;
-    padding: 0 1.2vw; background: #fff; border: 0.35vh solid var(--inchiostro);
-    border-radius: 1.6vh;
+    display: flex; align-items: center; gap: 18px; flex: 1 1 0; min-height: 0;
+    padding: 0 20px; background: #fff; border: 4px solid var(--inchiostro);
+    border-radius: 18px;
   }
   .voce.fatta { background: #edf6e6; border-color: var(--mela); }
   .segno {
-    flex: none; width: clamp(24px, 4.6vh, 44px); height: clamp(24px, 4.6vh, 44px);
-    border: 0.35vh solid var(--inchiostro); border-radius: 1vh;
-    display: flex; align-items: center; justify-content: center;
-    font-size: clamp(14px, 3vh, 28px); font-weight: 800; color: transparent;
+    flex: none; width: 42px; height: 42px; border: 4px solid var(--inchiostro);
+    border-radius: 11px; display: flex; align-items: center; justify-content: center;
+    font-size: 28px; font-weight: 800; color: transparent;
   }
   .voce.fatta .segno { background: var(--mela); border-color: var(--mela); color: #fff; }
-  .voce span.testo { flex: 1; font-size: clamp(13px, 2.9vh, 26px); min-width: 0;
-                     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .voce b { font-size: clamp(13px, 2.9vh, 26px); color: var(--mela); }
-  .voce.fatta span.testo { opacity: .6; }
-  .capricci { flex: none; border-top: 0.35vh dotted var(--grigio); padding-top: 1vh;
-              display: flex; flex-direction: column; gap: 0.6vh; }
-  .capricci h2 { font-size: clamp(9px, 1.7vh, 15px); font-weight: 800; opacity: .55;
-                 text-transform: uppercase; letter-spacing: .05em; }
-  .capriccio { display: flex; align-items: center; gap: 1vw;
-               font-size: clamp(12px, 2.4vh, 21px); }
-  .capriccio span { flex: 1; min-width: 0; overflow: hidden;
-                    text-overflow: ellipsis; white-space: nowrap; }
+  .voce .testo { flex: 1; font-size: 27px; min-width: 0; overflow: hidden;
+                 text-overflow: ellipsis; white-space: nowrap; }
+  .voce b { font-size: 27px; color: var(--mela); flex: none; }
+  .voce.fatta .testo { opacity: .6; }
+
+  .capricci { flex: none; border-top: 3px dotted var(--grigio); padding-top: 10px;
+              display: flex; flex-direction: column; gap: 5px; }
+  .capricci h2 { font-size: 15px; font-weight: 800; opacity: .5;
+                 text-transform: uppercase; letter-spacing: .06em; }
+  .capriccio { display: flex; align-items: center; gap: 14px; font-size: 22px; }
+  .capriccio .testo { flex: 1; min-width: 0; overflow: hidden;
+                      text-overflow: ellipsis; white-space: nowrap; }
   .capriccio b { color: var(--lampone); font-weight: 800; flex: none; }
-  .pulito { font-size: clamp(12px, 2.4vh, 21px); color: var(--mela); font-weight: 700; }
+  .pulito { font-size: 22px; color: var(--mela); font-weight: 700; }
   .avviso { flex: 1; display: flex; align-items: center; justify-content: center;
-            text-align: center; font-size: clamp(13px, 2.6vh, 22px); line-height: 1.5;
-            padding: 0 3vw; opacity: .8; }
-  .avviso a { color: var(--inchiostro); }
+            text-align: center; font-size: 26px; line-height: 1.5; padding: 0 40px; opacity: .8; }
 </style>
 </head>
 <body>
-<div class="schermo" id="schermo"></div>
+<div id="palco"></div>
 
 <script type="module">
-/* Vista sola lettura del salvadanaio, per lo schermo orizzontale dell'Echo Show.
-   Non scrive mai: apre solo un ascolto sul documento condiviso. */
+/* Vista sola lettura del salvadanaio per lo schermo orizzontale dell'Echo Show.
+   Non scrive mai su Firestore: apre solo un ascolto sul documento condiviso.
+   Il layout e' disegnato a 1280x620 e scalato per entrare nell'area visibile,
+   perche' su Silk le unita' vh non corrispondono all'area davvero visibile. */
 
 const FIREBASE = {
   apiKey: "AIzaSyDOI65LLcL0Ts0cqklgbutOQAF88e_X0X4",
@@ -133,6 +123,7 @@ const FIREBASE = {
 const VERSIONE_SDK = "10.12.2";
 const CHIAVE_PASS = "paghetta_pass_v1";
 const RITORNO_A_OGGI = 90000;
+const LARG = 1280, ALT = 620;
 
 const DOW = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
 const DOW_MINI = ["L", "M", "M", "G", "V", "S", "D"];
@@ -161,11 +152,30 @@ async function impronta(testo) {
   }
 }
 
-const schermo = document.getElementById("schermo");
+const palco = document.getElementById("palco");
 let dati = null;
 let sel = iso(new Date());
 let rete = "giu";
 let timerOggi = null;
+
+/* Misura l'area davvero disponibile e scala il palco per farci stare tutto. */
+function adatta() {
+  const vv = window.visualViewport;
+  const larghezza = Math.min(
+    document.documentElement.clientWidth || Infinity,
+    window.innerWidth || Infinity,
+    vv ? vv.width : Infinity
+  );
+  const altezza = Math.min(
+    document.documentElement.clientHeight || Infinity,
+    window.innerHeight || Infinity,
+    vv ? vv.height : Infinity
+  );
+  if (!isFinite(larghezza) || !isFinite(altezza) || larghezza < 50 || altezza < 50) return;
+  const k = Math.min(larghezza / LARG, altezza / ALT);
+  palco.style.transform =
+    `translate(${(larghezza - LARG * k) / 2}px, ${(altezza - ALT * k) / 2}px) scale(${k})`;
+}
 
 const barattolo = (pieno) => {
   const p = Math.max(0, Math.min(1, pieno || 0));
@@ -216,11 +226,12 @@ function disegna() {
   const spia = `<i class="spia ${rete}"></i>`;
 
   if (!dati) {
-    schermo.innerHTML = `<div class="testa"><span class="titolo">Il salvadanaio</span>${spia}</div>
+    palco.innerHTML = `<div class="testa"><span class="titolo">Il salvadanaio</span>${spia}</div>
       <div class="corpo"><div class="riquadro destra"><p class="avviso">
       ${rete === "senzaparola"
-        ? 'Apri prima <b>la pagina principale</b> su questo schermo e inserisci la parola di famiglia. Poi torna qui.'
-        : "Sto aprendo il salvadanaio…"}</p></div></div>`;
+        ? "Apri prima la pagina principale su questo schermo e inserisci la parola di famiglia."
+        : "Sto aprendo il salvadanaio\u2026"}</p></div></div>`;
+    adatta();
     return;
   }
 
@@ -231,7 +242,7 @@ function disegna() {
     (s, x) => s + ((rec.capricci && rec.capricci[x.id]) || 0) * Number(x.gettoni || 0), 0);
   const pieno = c.massimo > 0 ? c.netti / c.massimo : 0;
 
-  schermo.innerHTML = `
+  palco.innerHTML = `
     <div class="testa">
       <span class="titolo">${dati.config.nome ? `Il salvadanaio di ${esc(dati.config.nome)}` : "Il salvadanaio"}</span>
       ${spia}
@@ -266,7 +277,7 @@ function disegna() {
           ${dati.config.attivita.map((a) => {
             const ok = !!(rec.fatte && rec.fatte[a.id]);
             return `<div class="voce ${ok ? "fatta" : ""}">
-              <span class="segno">✓</span>
+              <span class="segno">\u2713</span>
               <span class="testo">${esc(a.testo)}</span>
               <b>+${a.gettoni}</b>
             </div>`;
@@ -275,19 +286,20 @@ function disegna() {
         <div class="capricci">
           <h2>Capricci</h2>
           ${persiOggi === 0
-            ? '<div class="pulito">Nessuno oggi, bene così</div>'
+            ? '<div class="pulito">Nessuno oggi, bene cos\u00ec</div>'
             : dati.config.capricci
                 .map((x) => ({ t: x.testo, n: (rec.capricci && rec.capricci[x.id]) || 0, g: Number(x.gettoni || 0) }))
                 .filter((r) => r.n > 0)
-                .map((r) => `<div class="capriccio"><span>${esc(r.t)}</span>
+                .map((r) => `<div class="capriccio"><span class="testo">${esc(r.t)}</span>
                   <b>${r.n > 1 ? r.n + " \u00d7 " : ""}\u2212${r.n * r.g}</b></div>`)
                 .join("")}
         </div>
       </div>
     </div>`;
+  adatta();
 }
 
-schermo.addEventListener("click", (ev) => {
+palco.addEventListener("click", (ev) => {
   const b = ev.target.closest("button[data-g], button[data-d]");
   if (!b) return;
   if (b.dataset.g) sel = piu(sel, Number(b.dataset.g));
@@ -297,6 +309,11 @@ schermo.addEventListener("click", (ev) => {
   timerOggi = setTimeout(() => { sel = iso(new Date()); disegna(); }, RITORNO_A_OGGI);
 });
 
+window.addEventListener("resize", adatta);
+window.addEventListener("orientationchange", adatta);
+if (window.visualViewport) window.visualViewport.addEventListener("resize", adatta);
+setTimeout(adatta, 300);
+setTimeout(adatta, 1200);
 setInterval(() => { if (dati) disegna(); }, 60000);
 
 (async () => {
