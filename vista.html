@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#cfe3dc" />
+<title>Il salvadanaio</title>
+<style>
+  :root {
+    --sfondo: #cfe3dc;
+    --carta: #fdf9f0;
+    --inchiostro: #23332f;
+    --mela: #5b9a31;
+    --zucca: #efa022;
+    --zucca-chiaro: #f8c96f;
+    --lampone: #c33f66;
+    --grigio: #a9bcb5;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; overflow: hidden; }
+  body {
+    font-family: ui-rounded, "SF Pro Rounded", "Segoe UI Variable Display", Nunito,
+      "Trebuchet MS", system-ui, sans-serif;
+    color: var(--inchiostro);
+    background: var(--sfondo);
+    -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  .schermo { height: 100vh; display: flex; flex-direction: column; padding: 2vh 1.6vw; gap: 1.6vh; }
+
+  .testa { display: flex; align-items: center; gap: 1.5vw; flex: none; }
+  .titolo { font-size: clamp(15px, 3.4vh, 30px); font-weight: 800; letter-spacing: -0.01em; }
+  .spia { width: 1.4vh; height: 1.4vh; min-width: 8px; min-height: 8px; border-radius: 50%;
+          background: var(--grigio); flex: none; }
+  .spia.ok { background: var(--mela); }
+  .spia.giu { background: var(--lampone); }
+  .riempi { flex: 1; }
+  .nav { display: flex; align-items: center; gap: 1vw; flex: none; }
+  .nav button {
+    font: inherit; color: inherit; background: var(--carta); cursor: pointer;
+    border: 0.35vh solid var(--inchiostro); border-radius: 50%;
+    width: clamp(38px, 7vh, 62px); height: clamp(38px, 7vh, 62px);
+    font-size: clamp(18px, 3.6vh, 30px); line-height: 1;
+  }
+  .nav button:active { background: var(--zucca-chiaro); }
+  .giorno { font-size: clamp(14px, 3vh, 26px); font-weight: 700; text-align: center;
+            min-width: 11vw; }
+  .oggi { display: inline-block; margin-left: 0.6vw; padding: 0.2vh 0.8vw;
+          font-size: clamp(10px, 1.9vh, 16px); font-weight: 700;
+          background: var(--zucca-chiaro); border-radius: 1vh; }
+
+  .corpo { flex: 1; min-height: 0; display: flex; gap: 1.6vw; }
+  .riquadro {
+    background: var(--carta); border: 0.4vh solid var(--inchiostro);
+    border-radius: 2.4vh; padding: 2vh 1.6vw; min-height: 0;
+  }
+
+  .sinistra { flex: 0 0 31%; display: flex; flex-direction: column; align-items: center;
+              justify-content: space-between; gap: 1vh; }
+  .barattolo { height: 26vh; width: auto; flex: none; }
+  .euro { font-size: clamp(26px, 8.4vh, 72px); font-weight: 800; line-height: 1;
+          letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+  .gettoni { font-size: clamp(11px, 2.2vh, 19px); opacity: .7; text-align: center; }
+  .barra { width: 100%; height: 1.8vh; min-height: 10px; border: 0.3vh solid var(--inchiostro);
+           border-radius: 1vh; background: #fff; flex: none; }
+  .barra span { display: block; height: 100%; background: var(--mela); border-radius: 0.8vh; }
+  .strip { display: flex; gap: 0.5vw; width: 100%; flex: none; }
+  .cella {
+    flex: 1; border: 0.3vh solid var(--inchiostro); border-radius: 1.2vh; background: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 0.6vh 0; cursor: pointer; font: inherit; color: inherit; min-width: 0;
+  }
+  .cella small { font-size: clamp(8px, 1.5vh, 13px); font-weight: 700; opacity: .55; }
+  .cella b { font-size: clamp(10px, 2vh, 17px); }
+  .cella.piena { background: var(--mela); color: #fff; }
+  .cella.piena small { opacity: .85; }
+  .cella.parziale { background: var(--zucca-chiaro); }
+  .cella.futuro, .cella.libero { border-color: var(--grigio); color: var(--grigio); }
+  .cella.libero { background: transparent; border-style: dashed; }
+  .cella.scelta { box-shadow: 0 0 0 0.4vh var(--zucca); }
+
+  .destra { flex: 1; display: flex; flex-direction: column; gap: 1vh; min-width: 0; }
+  .lista { flex: 1; min-height: 0; display: flex; flex-direction: column;
+           justify-content: space-evenly; gap: 0.8vh; }
+  .voce {
+    display: flex; align-items: center; gap: 1.2vw; flex: 1 1 0; min-height: 0;
+    padding: 0 1.2vw; background: #fff; border: 0.35vh solid var(--inchiostro);
+    border-radius: 1.6vh;
+  }
+  .voce.fatta { background: #edf6e6; border-color: var(--mela); }
+  .segno {
+    flex: none; width: clamp(24px, 4.6vh, 44px); height: clamp(24px, 4.6vh, 44px);
+    border: 0.35vh solid var(--inchiostro); border-radius: 1vh;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(14px, 3vh, 28px); font-weight: 800; color: transparent;
+  }
+  .voce.fatta .segno { background: var(--mela); border-color: var(--mela); color: #fff; }
+  .voce span.testo { flex: 1; font-size: clamp(13px, 2.9vh, 26px); min-width: 0;
+                     overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .voce b { font-size: clamp(13px, 2.9vh, 26px); color: var(--mela); }
+  .voce.fatta span.testo { opacity: .6; }
+  .persi { flex: none; font-size: clamp(11px, 2.1vh, 18px); color: var(--lampone);
+           font-weight: 700; text-align: center; }
+  .avviso { flex: 1; display: flex; align-items: center; justify-content: center;
+            text-align: center; font-size: clamp(13px, 2.6vh, 22px); line-height: 1.5;
+            padding: 0 3vw; opacity: .8; }
+  .avviso a { color: var(--inchiostro); }
+</style>
+</head>
+<body>
+<div class="schermo" id="schermo"></div>
+
+<script type="module">
+/* Vista sola lettura del salvadanaio, per lo schermo orizzontale dell'Echo Show.
+   Non scrive mai: apre solo un ascolto sul documento condiviso. */
+
+const FIREBASE = {
+  apiKey: "AIzaSyDOI65LLcL0Ts0cqklgbutOQAF88e_X0X4",
+  authDomain: "salvadanaio-a9f1f.firebaseapp.com",
+  projectId: "salvadanaio-a9f1f",
+  appId: "1:703648579083:web:60345e8c8f48056f1a110e",
+};
+const VERSIONE_SDK = "10.12.2";
+const CHIAVE_PASS = "paghetta_pass_v1";
+const RITORNO_A_OGGI = 90000;
+
+const DOW = ["Dom", "Lun", "Mar", "Mer", "Gio", "Ven", "Sab"];
+const DOW_MINI = ["L", "M", "M", "G", "V", "S", "D"];
+const MESI = ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno",
+  "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"];
+
+const due = (n) => String(n).padStart(2, "0");
+const iso = (d) => `${d.getFullYear()}-${due(d.getMonth() + 1)}-${due(d.getDate())}`;
+const daIso = (s) => { const [a, m, g] = s.split("-").map(Number); return new Date(a, m - 1, g); };
+const piu = (s, n) => { const d = daIso(s); d.setDate(d.getDate() + n); return iso(d); };
+const lunedi = (s) => { const d = daIso(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
+const eur = (n) => (Number.isFinite(n) ? n : 0).toLocaleString("it-IT", { style: "currency", currency: "EUR" });
+const attivoIn = (d, modo) => (modo === "feriali" ? d.getDay() >= 1 && d.getDay() <= 5 : true);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g,
+  (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+async function impronta(testo) {
+  const pulito = testo.trim().toLowerCase().replace(/\s+/g, " ");
+  try {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode("paghetta:" + pulito));
+    return Array.from(new Uint8Array(buf)).map((b) => due(b.toString(16))).join("").slice(0, 28);
+  } catch (e) {
+    let h = 5381;
+    for (const c of pulito) h = ((h << 5) + h + c.charCodeAt(0)) >>> 0;
+    return "l" + h.toString(16);
+  }
+}
+
+const schermo = document.getElementById("schermo");
+let dati = null;
+let sel = iso(new Date());
+let rete = "giu";
+let timerOggi = null;
+
+const barattolo = (pieno) => {
+  const p = Math.max(0, Math.min(1, pieno || 0));
+  const cima = 124 - p * 88;
+  const sagoma = "M26,46 Q26,32 42,32 L88,32 Q104,32 104,46 L104,120 Q104,134 88,134 L42,134 Q26,134 26,120 Z";
+  return `<svg class="barattolo" viewBox="0 0 130 150" aria-hidden="true">
+    <defs><clipPath id="cl"><path d="${sagoma}"/></clipPath></defs>
+    <rect x="38" y="14" width="54" height="18" rx="7" fill="var(--zucca)"
+      stroke="var(--inchiostro)" stroke-width="3"/>
+    <rect x="57" y="20" width="16" height="6" rx="3" fill="var(--inchiostro)"/>
+    <g clip-path="url(#cl)">
+      <rect x="20" y="0" width="90" height="150" fill="#fff"/>
+      ${p > 0.01 ? `<rect x="20" y="${cima}" width="90" height="150" fill="var(--zucca)"/>
+        <ellipse cx="65" cy="${cima}" rx="45" ry="7" fill="var(--zucca-chiaro)"/>` : ""}
+    </g>
+    <path d="${sagoma}" fill="none" stroke="var(--inchiostro)" stroke-width="3.5" stroke-linejoin="round"/>
+  </svg>`;
+};
+
+function calcola() {
+  const { config, registro } = dati;
+  const oggi = iso(new Date());
+  const perGiorno = config.attivita.reduce((s, x) => s + Number(x.gettoni || 0), 0);
+  const inizio = lunedi(sel);
+  let attivi = 0, fatti = 0, persi = 0;
+  const giorni = [];
+  for (let i = 0; i < 7; i++) {
+    const chiave = piu(inizio, i);
+    const att = attivoIn(daIso(chiave), config.giorni);
+    const rec = registro[chiave] || {};
+    const fattiG = config.attivita.reduce(
+      (s, x) => s + (rec.fatte && rec.fatte[x.id] ? Number(x.gettoni || 0) : 0), 0);
+    const capG = config.capricci.reduce(
+      (s, x) => s + ((rec.capricci && rec.capricci[x.id]) || 0) * Number(x.gettoni || 0), 0);
+    if (att) { attivi += 1; fatti += fattiG; }
+    persi += capG;
+    giorni.push({ chiave, att, fattiG, capG, futuro: chiave > oggi });
+  }
+  const massimo = attivi * perGiorno;
+  const netti = Math.max(0, fatti - persi);
+  return {
+    perGiorno, giorni, massimo, netti,
+    valore: massimo > 0 ? Number(config.importoSettimanale || 0) / massimo : 0,
+  };
+}
+
+function disegna() {
+  const spia = `<i class="spia ${rete}"></i>`;
+
+  if (!dati) {
+    schermo.innerHTML = `<div class="testa"><span class="titolo">Il salvadanaio</span>${spia}</div>
+      <div class="corpo"><div class="riquadro destra"><p class="avviso">
+      ${rete === "senzaparola"
+        ? 'Apri prima <b>la pagina principale</b> su questo schermo e inserisci la parola di famiglia. Poi torna qui.'
+        : "Sto aprendo il salvadanaio…"}</p></div></div>`;
+    return;
+  }
+
+  const c = calcola();
+  const d = daIso(sel);
+  const rec = dati.registro[sel] || { fatte: {}, capricci: {} };
+  const persiOggi = dati.config.capricci.reduce(
+    (s, x) => s + ((rec.capricci && rec.capricci[x.id]) || 0) * Number(x.gettoni || 0), 0);
+  const pieno = c.massimo > 0 ? c.netti / c.massimo : 0;
+
+  schermo.innerHTML = `
+    <div class="testa">
+      <span class="titolo">${dati.config.nome ? `Il salvadanaio di ${esc(dati.config.nome)}` : "Il salvadanaio"}</span>
+      ${spia}
+      <span class="riempi"></span>
+      <div class="nav">
+        <button data-g="-1" aria-label="Giorno precedente">&lsaquo;</button>
+        <span class="giorno">${DOW[d.getDay()]} ${d.getDate()} ${MESI[d.getMonth()]}
+          ${sel === iso(new Date()) ? '<span class="oggi">oggi</span>' : ""}</span>
+        <button data-g="1" aria-label="Giorno successivo">&rsaquo;</button>
+      </div>
+    </div>
+
+    <div class="corpo">
+      <div class="riquadro sinistra">
+        ${barattolo(pieno)}
+        <div class="euro">${eur(c.netti * c.valore)}</div>
+        <div class="gettoni">${c.netti} gettoni su ${c.massimo}<br>questa settimana</div>
+        <div class="barra"><span style="width:${Math.min(100, pieno * 100)}%"></span></div>
+        <div class="strip">
+          ${c.giorni.map((g, i) => {
+            const st = !g.att ? "libero" : g.futuro ? "futuro"
+              : c.perGiorno > 0 && g.fattiG === c.perGiorno ? "piena"
+              : g.fattiG > 0 ? "parziale" : "vuota";
+            return `<button class="cella ${st} ${g.chiave === sel ? "scelta" : ""}" data-d="${g.chiave}">
+              <small>${DOW_MINI[i]}</small><b>${daIso(g.chiave).getDate()}</b></button>`;
+          }).join("")}
+        </div>
+      </div>
+
+      <div class="riquadro destra">
+        <div class="lista">
+          ${dati.config.attivita.map((a) => {
+            const ok = !!(rec.fatte && rec.fatte[a.id]);
+            return `<div class="voce ${ok ? "fatta" : ""}">
+              <span class="segno">✓</span>
+              <span class="testo">${esc(a.testo)}</span>
+              <b>+${a.gettoni}</b>
+            </div>`;
+          }).join("")}
+        </div>
+        ${persiOggi > 0 ? `<div class="persi">− ${persiOggi} gettoni per i capricci di oggi</div>` : ""}
+      </div>
+    </div>`;
+}
+
+schermo.addEventListener("click", (ev) => {
+  const b = ev.target.closest("button[data-g], button[data-d]");
+  if (!b) return;
+  if (b.dataset.g) sel = piu(sel, Number(b.dataset.g));
+  else sel = b.dataset.d;
+  disegna();
+  clearTimeout(timerOggi);
+  timerOggi = setTimeout(() => { sel = iso(new Date()); disegna(); }, RITORNO_A_OGGI);
+});
+
+setInterval(() => { if (dati) disegna(); }, 60000);
+
+(async () => {
+  const parola = localStorage.getItem(CHIAVE_PASS);
+  if (!parola) { rete = "senzaparola"; disegna(); return; }
+  disegna();
+  try {
+    const base = `https://www.gstatic.com/firebasejs/${VERSIONE_SDK}`;
+    const [{ initializeApp }, { getAuth, signInAnonymously }, fs] = await Promise.all([
+      import(`${base}/firebase-app.js`),
+      import(`${base}/firebase-auth.js`),
+      import(`${base}/firebase-firestore.js`),
+    ]);
+    const app = initializeApp(FIREBASE);
+    await signInAnonymously(getAuth(app));
+    const db = fs.getFirestore(app);
+    const rif = fs.doc(db, "paghette", await impronta(parola));
+    fs.onSnapshot(rif, (istantanea) => {
+      rete = "ok";
+      if (istantanea.exists()) {
+        const g = istantanea.data();
+        const cfg = g.config || {};
+        dati = {
+          config: {
+            nome: cfg.nome || "",
+            importoSettimanale: cfg.importoSettimanale || 0,
+            giorni: cfg.giorni || "tutti",
+            attivita: Array.isArray(cfg.attivita) ? cfg.attivita : [],
+            capricci: Array.isArray(cfg.capricci) ? cfg.capricci : [],
+          },
+          registro: g.registro || {},
+        };
+      }
+      disegna();
+    }, () => { rete = "giu"; disegna(); });
+  } catch (e) {
+    rete = "giu";
+    disegna();
+  }
+})();
+</script>
+</body>
+</html>
