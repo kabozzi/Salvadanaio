@@ -101,8 +101,16 @@
                      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .voce b { font-size: clamp(13px, 2.9vh, 26px); color: var(--mela); }
   .voce.fatta span.testo { opacity: .6; }
-  .persi { flex: none; font-size: clamp(11px, 2.1vh, 18px); color: var(--lampone);
-           font-weight: 700; text-align: center; }
+  .capricci { flex: none; border-top: 0.35vh dotted var(--grigio); padding-top: 1vh;
+              display: flex; flex-direction: column; gap: 0.6vh; }
+  .capricci h2 { font-size: clamp(9px, 1.7vh, 15px); font-weight: 800; opacity: .55;
+                 text-transform: uppercase; letter-spacing: .05em; }
+  .capriccio { display: flex; align-items: center; gap: 1vw;
+               font-size: clamp(12px, 2.4vh, 21px); }
+  .capriccio span { flex: 1; min-width: 0; overflow: hidden;
+                    text-overflow: ellipsis; white-space: nowrap; }
+  .capriccio b { color: var(--lampone); font-weight: 800; flex: none; }
+  .pulito { font-size: clamp(12px, 2.4vh, 21px); color: var(--mela); font-weight: 700; }
   .avviso { flex: 1; display: flex; align-items: center; justify-content: center;
             text-align: center; font-size: clamp(13px, 2.6vh, 22px); line-height: 1.5;
             padding: 0 3vw; opacity: .8; }
@@ -264,7 +272,17 @@ function disegna() {
             </div>`;
           }).join("")}
         </div>
-        ${persiOggi > 0 ? `<div class="persi">− ${persiOggi} gettoni per i capricci di oggi</div>` : ""}
+        <div class="capricci">
+          <h2>Capricci</h2>
+          ${persiOggi === 0
+            ? '<div class="pulito">Nessuno oggi, bene così</div>'
+            : dati.config.capricci
+                .map((x) => ({ t: x.testo, n: (rec.capricci && rec.capricci[x.id]) || 0, g: Number(x.gettoni || 0) }))
+                .filter((r) => r.n > 0)
+                .map((r) => `<div class="capriccio"><span>${esc(r.t)}</span>
+                  <b>${r.n > 1 ? r.n + " \u00d7 " : ""}\u2212${r.n * r.g}</b></div>`)
+                .join("")}
+        </div>
       </div>
     </div>`;
 }
